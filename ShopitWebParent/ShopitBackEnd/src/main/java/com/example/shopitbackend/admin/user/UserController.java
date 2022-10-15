@@ -5,6 +5,7 @@ import com.example.common.entity.User;
 import com.example.shopitbackend.admin.FileUploadUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.repository.query.Param;
 import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -27,12 +28,17 @@ public class UserController {
 
     @GetMapping("/users")
     public String listFirstPage(Model model) {
-        return listByPage(1, model);
+        return listByPage(1, model, "firstName", "asc");
     }
 
     @GetMapping("/users/page/{pageNum}")
-    public String listByPage(@PathVariable(name = "pageNum") int pageNum, Model model) {
-        Page<User> page = userService.listByPage(pageNum);
+    public String listByPage(@PathVariable(name = "pageNum") int pageNum, Model model,
+                             @Param("sortField") String sortField,
+                             @Param("sortDir") String sortDir) {
+        System.out.println("Sort Field: " + sortField);
+        System.out.println("Sort Dir: " + sortDir);
+
+        Page<User> page = userService.listByPage(pageNum, sortField, sortDir);
         List<User> listUsers = page.getContent();
 
         long startCount = (long) (pageNum - 1) * UserService.USERS_PER_PAGE + 1;
@@ -42,12 +48,17 @@ public class UserController {
             endCount = page.getTotalElements();
         }
 
+        String reverseSortDir = sortDir.equals("asc") ? "desc" : "asc";
+
         model.addAttribute("currentPage", pageNum);
         model.addAttribute("totalPages", page.getTotalPages());
         model.addAttribute("startCount", startCount);
         model.addAttribute("endCount", endCount);
         model.addAttribute("totalItems", page.getTotalElements());
         model.addAttribute("listUsers", listUsers);
+        model.addAttribute("sortField", sortField);
+        model.addAttribute("sortDir", sortDir);
+        model.addAttribute("reverseSortDir", reverseSortDir);
 
         return "users";
     }
